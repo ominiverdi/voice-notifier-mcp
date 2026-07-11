@@ -73,7 +73,19 @@ cd2191ab31b914ed7b318416b0e4440fdf392ddad9106a060819aa600a64f59a  af_nicole.bin
 669fe0647f9dd04fcab92f1439a40eeb4c8b4ab1f82e4996fe3d918ce4a63b73  bf_emma.bin
 ```
 
-Override the defaults with `VOICE_NOTIFIER_MODEL_PATH`, `VOICE_NOTIFIER_VOICE_PATH`, and `VOICE_NOTIFIER_VOICE`. `VOICE_NOTIFIER_VOICE_PATH` may name one `.bin` file or a directory containing voice files. The server lists safe `.bin` file stems dynamically in the `voice_name` schema; compatible custom embeddings require no catalog update. Restart the MCP client after adding or removing voice files because clients may cache tool schemas.
+### Add extra voices
+
+The installer intentionally provides a small verified selection. To add another compatible Kokoro voice, obtain its raw little-endian float32 `.bin` embedding from a trusted source and copy it into the asset directory:
+
+```bash
+asset_dir="${XDG_DATA_HOME:-$HOME/.local/share}/voice-notifier-mcp"
+install -d -m 0755 "$asset_dir"
+install -m 0644 /path/to/custom_voice.bin "$asset_dir/custom_voice.bin"
+```
+
+The filename stem becomes the `voice_name` value and must contain only ASCII letters, digits, `_`, or `-`. PyTorch `.pt` voice files are not directly supported; obtain or convert the corresponding raw `.bin` embedding rather than merely renaming the file. Verify the source, license, and checksum before installation. Restart every MCP client after adding, replacing, or removing voices so it reloads both the tool schema and voice data.
+
+Override the defaults with `VOICE_NOTIFIER_MODEL_PATH`, `VOICE_NOTIFIER_VOICE_PATH`, and `VOICE_NOTIFIER_VOICE`. `VOICE_NOTIFIER_VOICE_PATH` may name one `.bin` file or a directory containing voice files. The server lists safe `.bin` file stems dynamically in the `voice_name` schema; compatible custom embeddings require no catalog update.
 
 ## Build and test
 

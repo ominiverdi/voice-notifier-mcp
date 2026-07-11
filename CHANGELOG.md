@@ -14,6 +14,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Added dynamic JSON Schema enumeration of installed safe `.bin` voice file stems.
 - Added five additional checksum-verified voices to the asset installer: `af_bella`, `af_heart`, `af_nicole`, `af_sarah`, and `am_michael`.
 - Added installed-voice discovery, selection, and validation tests.
+- Documented installation requirements and commands for extra voice embeddings.
 
 ### Changed
 
