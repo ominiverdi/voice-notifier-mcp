@@ -1,0 +1,105 @@
+name: Release packages
+
+on:
+  push:
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-linux-x86_64:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Validate tag version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)"
+          test "${GITHUB_REF_NAME}" = "v${version}"
+
+      - name: Install Rust components
+        run: rustup component add clippy rustfmt
+
+      - name: Install RPM packager
+        run: cargo install --locked cargo-generate-rpm --version 0.21.0
+
+      - name: Validate source
+        run: |
+          cargo fmt --all -- --check
+          cargo test --locked
+          cargo clippy --locked --all-targets -- -D warnings
+          bash -n scripts/install-kokoro-assets.sh
+          bash -n scripts/package-release.sh
+          python3 -m py_compile scripts/smoke-test-binary.py
+
+      - name: Build release packages
+        run: ./scripts/package-release.sh
+
+      - name: Verify checksums
+        run: cd dist && sha256sum --check SHA256SUMS
+
+      - name: Smoke-test archive binary
+        run: |
+          mkdir target/archive-smoke
+          tar -xzf dist/voice-notifier-mcp-*-linux-x86_64.tar.gz -C target/archive-smoke
+          binary="$(find target/archive-smoke -type f -name voice-notifier-mcp -print -quit)"
+          scripts/smoke-test-binary.py "${binary}"
+
+      - name: Smoke-test Debian package payload
+        run: |
+          mkdir target/deb-smoke
+          dpkg-deb --extract dist/*.deb target/deb-smoke
+          scripts/smoke-test-binary.py target/deb-smoke/usr/bin/voice-notifier-mcp
+
+      - name: Install-test Debian package
+        run: |
+          docker run --rm \
+            --volume "${PWD}/dist:/dist:ro" \
+            debian:13-slim \
+            bash -c 'apt-get update && apt-get install --yes --no-install-recommends /dist/*.deb && printf "%s\n" "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" | voice-notifier-mcp | grep -q voice_notify'
+
+      - name: Install-test RPM package
+        run: |
+          docker run --rm \
+            --volume "${PWD}/dist:/dist:ro" \
+            fedora:latest \
+            bash -c 'dnf install --assumeyes /dist/*.rpm && printf "%s\n" "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" | voice-notifier-mcp | grep -q voice_notify'
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-notifier-mcp-linux-x86_64
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: package-linux-x86_64
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download release packages
+        uses: actions/download-artifact@v4
+        with:
+          name: voice-notifier-mcp-linux-x86_64
+          path: dist
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" dist/* --clobber --repo "${GITHUB_REPOSITORY}"
+          else
+            gh release create "${GITHUB_REF_NAME}" dist/* \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "Voice Notifier MCP ${GITHUB_REF_NAME}" \
+              --generate-notes
+          fi

@@ -1,5 +1,8 @@
 target/
+dist/
 *.wav
 *.onnx
 *.bin
+*.pyc
+__pycache__/
 .DS_Store

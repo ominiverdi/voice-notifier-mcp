@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-11
+
+### Added
+
+- Added automated x86-64 Linux release packaging for portable archives, Debian packages, and RPM packages.
+- Added a packaged-binary subprocess smoke test covering all supported MCP protocol versions and tool annotations.
+- Added an installed `voice-notifier-install-assets` command to release artifacts.
+
+### Changed
+
+- Enabled release-profile symbol stripping to reduce download size.
+
 ## [0.1.1] - 2026-07-11
 
 ### Fixed
@@ -31,6 +43,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `spd-say` emergency fallback for neural initialization, synthesis, or playback failures.
 - Local asset configuration and checksum-verifying installer.
 
-[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ominiverdi/voice-notifier-mcp/releases/tag/v0.1.0

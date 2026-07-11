@@ -1,6 +1,6 @@
 [package]
 name = "voice-notifier-mcp"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2024"
 rust-version = "1.88"
 authors = ["Lorenzo Becchi"]
@@ -11,6 +11,34 @@ homepage = "https://github.com/ominiverdi/voice-notifier-mcp"
 readme = "README.md"
 keywords = ["mcp", "notifications", "kokoro", "tts", "pipewire"]
 categories = ["command-line-utilities", "multimedia::audio"]
+
+[profile.release]
+strip = "symbols"
+
+[package.metadata.generate-rpm]
+release = "1"
+vendor = "Lorenzo Becchi"
+auto-req = "disabled"
+assets = [
+    { source = "target/release/voice-notifier-mcp", dest = "/usr/bin/voice-notifier-mcp", mode = "755" },
+    { source = "scripts/install-kokoro-assets.sh", dest = "/usr/bin/voice-notifier-install-assets", mode = "755" },
+    { source = "README.md", dest = "/usr/share/doc/voice-notifier-mcp/README.md", mode = "644", doc = true },
+    { source = "LICENSE", dest = "/usr/share/licenses/voice-notifier-mcp/LICENSE", mode = "644", doc = true },
+    { source = "THIRD_PARTY.md", dest = "/usr/share/doc/voice-notifier-mcp/THIRD_PARTY.md", mode = "644", doc = true },
+]
+
+[package.metadata.generate-rpm.requires]
+glibc = ">= 2.39"
+libgcc = "*"
+"libstdc++" = "*"
+libnotify = "*"
+pipewire-utils = "*"
+curl = "*"
+coreutils = "*"
+bash = "*"
+
+[package.metadata.generate-rpm.recommends]
+speech-dispatcher = "*"
 
 [dependencies]
 kokoro-en = { version = "=0.1.4", default-features = false, features = ["misaki-lean"] }

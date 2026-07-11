@@ -45,6 +45,8 @@ The default assets are under `$XDG_DATA_HOME/voice-notifier-mcp`, or `~/.local/s
 
 The default `ort`/ONNX Runtime artifact currently requires glibc 2.38 or newer. Clean container tests passed on Debian 13 with Rust 1.88 and 1.90, and failed to link on Debian 12 because its glibc 2.36 lacks the required `__isoc23_*` symbols.
 
+Release packaging produces an x86-64 portable archive, Debian package, RPM package, and SHA-256 manifest. Packages include the server and checksum-verifying asset installer, but never include model or voice assets. Release artifacts are built on Ubuntu 24.04 and therefore require glibc 2.39 or newer, while source builds retain the glibc 2.38 floor.
+
 MCP interoperability has been verified with Ferrum using protocol versions `2024-11-05` and `2025-11-25`, with Pi 0.80.3 through its MCP bridge extension using `@modelcontextprotocol/sdk` 1.29, and with the official MCP Inspector 0.22.0. `voice_notify` declares explicit annotations: it has local side effects, is non-destructive, is not idempotent, and does not interact with open-world remote entities.
 
 ## Architecture

@@ -15,14 +15,42 @@ Kokoro loads lazily on the first spoken notification and remains resident. The d
 - Linux with glibc 2.38 or newer and PipeWire's `pw-play`
 - `notify-send` for desktop notifications
 - `spd-say` for speech fallback
-- Rust 1.88 or newer and a native build toolchain
+- Rust 1.88 or newer and a native build toolchain when building from source
 - approximately 312 MB for the Kokoro model and Emma voice assets
 
-The current ONNX Runtime binary requires glibc 2.38 symbols. Ubuntu 24.04 and Debian 13 are tested; Debian 12 and Ubuntu 22.04 are not currently supported by the default build. On Debian and Ubuntu, the runtime commands are provided by `pipewire-bin`, `libnotify-bin`, and `speech-dispatcher`.
+The current ONNX Runtime binary requires glibc 2.38 symbols. Ubuntu 24.04 and Debian 13 are tested; Debian 12 and Ubuntu 22.04 are not currently supported by the default build. Release binaries and packages are built on Ubuntu 24.04 and require glibc 2.39 or newer. On Debian and Ubuntu, the runtime commands are provided by `pipewire-bin`, `libnotify-bin`, and `speech-dispatcher`. On Fedora, they are provided by `pipewire-utils`, `libnotify`, and `speech-dispatcher`.
 
 The licensed integration uses [`kokoro-en` 0.1.4](https://crates.io/crates/kokoro-en), licensed Apache-2.0. The Kokoro model weights are also Apache-2.0.
 
 ## Install
+
+### Debian or Ubuntu package
+
+Download the `.deb` and `SHA256SUMS` files for the release, verify the package, and install it:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS
+sudo apt install ./voice-notifier-mcp_*_amd64.deb
+voice-notifier-install-assets
+```
+
+### Fedora or RPM package
+
+Download the `.rpm` and `SHA256SUMS` files for the release, verify the package, and install it:
+
+```bash
+sha256sum --check --ignore-missing SHA256SUMS
+sudo dnf install ./voice-notifier-mcp-*.x86_64.rpm
+voice-notifier-install-assets
+```
+
+The distribution packages install `voice-notifier-mcp` and `voice-notifier-install-assets` under `/usr/bin`. Runtime dependencies are installed through the package manager. `speech-dispatcher` is recommended rather than required because it is only the emergency fallback.
+
+### Portable archive
+
+The release also provides a `linux-x86_64.tar.gz` archive containing the server, asset installer, documentation, and licenses. Extract it and copy the two executables to a directory on `PATH`, then run `voice-notifier-install-assets`.
+
+### Build from source
 
 ```bash
 git clone https://github.com/ominiverdi/voice-notifier-mcp.git
@@ -31,7 +59,7 @@ cd voice-notifier-mcp
 cargo install --locked --path .
 ```
 
-The installer downloads the official model and Emma voice, verifies their SHA-256 hashes, and places them under `${XDG_DATA_HOME:-$HOME/.local/share}/voice-notifier-mcp`. Once installed, synthesis is fully local.
+The asset installer downloads the official model and Emma voice, verifies their SHA-256 hashes, and places them under `${XDG_DATA_HOME:-$HOME/.local/share}/voice-notifier-mcp`. Once installed, synthesis is fully local.
 
 Expected SHA-256 values for the installed assets:
 
@@ -49,7 +77,10 @@ cargo fmt --all -- --check
 cargo test
 cargo clippy --all-targets -- -D warnings
 cargo build --release
+./scripts/package-release.sh
 ```
+
+`package-release.sh` creates a portable archive, Debian package, RPM package, and SHA-256 manifest under `dist/`. It requires `dpkg-deb` and `cargo-generate-rpm` 0.21.0 in addition to the Rust build tools.
 
 ## Tool input
 
