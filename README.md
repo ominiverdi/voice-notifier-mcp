@@ -12,13 +12,13 @@ Kokoro loads lazily on the first spoken notification and remains resident. The d
 
 ## Requirements
 
-- Linux with PipeWire's `pw-play`
+- Linux with glibc 2.38 or newer and PipeWire's `pw-play`
 - `notify-send` for desktop notifications
 - `spd-say` for speech fallback
-- Rust 2024-compatible toolchain and a native build toolchain
+- Rust 1.88 or newer and a native build toolchain
 - approximately 312 MB for the Kokoro model and Emma voice assets
 
-On Debian and Ubuntu, the runtime commands are provided by `pipewire-bin`, `libnotify-bin`, and `speech-dispatcher`.
+The current ONNX Runtime binary requires glibc 2.38 symbols. Ubuntu 24.04 and Debian 13 are tested; Debian 12 and Ubuntu 22.04 are not currently supported by the default build. On Debian and Ubuntu, the runtime commands are provided by `pipewire-bin`, `libnotify-bin`, and `speech-dispatcher`.
 
 The licensed integration uses [`kokoro-en` 0.1.4](https://crates.io/crates/kokoro-en), licensed Apache-2.0. The Kokoro model weights are also Apache-2.0.
 

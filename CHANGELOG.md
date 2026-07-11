@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+
+- Documented the glibc 2.38 runtime requirement discovered during clean-container testing.
+- Declared and added CI coverage for Rust 1.88 as the minimum supported toolchain.
+
 ## [0.1.0] - 2026-07-11
 
 ### Added

@@ -43,6 +43,8 @@ Ferrum -> voice-notifier-mcp
 
 The default assets are under `$XDG_DATA_HOME/voice-notifier-mcp`, or `~/.local/share/voice-notifier-mcp` when `XDG_DATA_HOME` is unset. Model, voice-file, and voice-name environment variables can override these defaults.
 
+The default `ort`/ONNX Runtime artifact currently requires glibc 2.38 or newer. Clean container tests passed on Debian 13 with Rust 1.88 and 1.90, and failed to link on Debian 12 because its glibc 2.36 lacks the required `__isoc23_*` symbols.
+
 ## Architecture
 
 Direct embedding is implemented for the initial single-consumer deployment. One persistent MCP process owns the lazily initialized model, avoiding per-notification model loads and a localhost HTTP sidecar. A separate service remains an option if multiple applications later need to share the model or stronger fault isolation becomes necessary.

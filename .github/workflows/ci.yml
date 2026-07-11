@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
@@ -33,3 +33,15 @@ jobs:
 
       - name: Validate asset installer syntax
         run: bash -n scripts/install-kokoro-assets.sh
+
+  minimum-rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Install Rust 1.88
+        run: rustup toolchain install 1.88 --profile minimal
+
+      - name: Test minimum supported Rust version
+        run: cargo +1.88 test --locked
