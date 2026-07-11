@@ -29,7 +29,7 @@ The server exposes `voice_notify` over JSON-RPC on standard input and output. It
 | --- | --- | --- |
 | Desktop | `notify-send` | enabled |
 | Terminal | ASCII bell written to standard error | disabled |
-| Speech | Embedded Kokoro with `bf_emma`; `spd-say` fallback | disabled |
+| Speech | Embedded Kokoro with dynamically selected installed voices; `spd-say` fallback | disabled |
 
 Only the notification message is required. Process arguments are passed directly with `std::process::Command`; user input is not evaluated by a shell.
 
@@ -41,7 +41,7 @@ Ferrum -> voice-notifier-mcp
               -> spd-say -> Speech Dispatcher (fallback only)
 ```
 
-The default assets are under `$XDG_DATA_HOME/voice-notifier-mcp`, or `~/.local/share/voice-notifier-mcp` when `XDG_DATA_HOME` is unset. Model, voice-file, and voice-name environment variables can override these defaults.
+The default assets are under `$XDG_DATA_HOME/voice-notifier-mcp`, or `~/.local/share/voice-notifier-mcp` when `XDG_DATA_HOME` is unset. Model, voice-path, and default-voice environment variables can override these defaults. The asset installer provides six verified voices, with `bf_emma` preferred by default.
 
 The default `ort`/ONNX Runtime artifact currently requires glibc 2.38 or newer. Clean container tests passed on Debian 13 with Rust 1.88 and 1.90, and failed to link on Debian 12 because its glibc 2.36 lacks the required `__isoc23_*` symbols.
 
@@ -65,36 +65,15 @@ agent event -> attention policy -> desktop + bell + local speech -> fallback
 
 This boundary avoids duplicating existing TTS MCP servers and keeps routine completion notifications simple and reliable.
 
-## Planned MCP interface extensions
+## Voice selection
 
-`voice_notify` already supports a `speech_speed` multiplier from 0.5 through 2.0. Future interface extensions may add:
+`voice_notify` supports a `speech_speed` multiplier from 0.5 through 2.0 and an optional `voice_name`. On each `tools/list` request, the server scans the configured voice path and publishes the sorted safe `.bin` file stems as the `voice_name` JSON Schema enum. The server validates the selected name again before notification delivery.
 
-- `voice_name`: raw engine voice name
-- `voice_profile`: curated semantic profile such as `clear-us`, `clear-uk`, or `asmr`
+The agent can select one installed voice and reuse it throughout its session. No cross-process assignment registry or hardcoded catalog is required. If `voice_name` is omitted, `VOICE_NOTIFIER_VOICE` takes precedence, followed by `bf_emma` when installed and then the first sorted available voice.
 
-A second tool, tentatively named `voice_list`, can return structured voice metadata:
+A voice path may be one `.bin` file or a directory. Compatible custom voice embeddings become selectable after they are copied into the directory and the MCP client is restarted. A voice embedding does not add language support by itself; language behavior remains constrained by the English Kokoro model and G2P pipeline.
 
-- identifier and display name
-- language and accent
-- gender presentation
-- official quality and training-data grades where available
-- locally assigned listening characteristics
-- supported speed range
-- whether the entry is a native voice, alias, or blend
-
-The normal notification schema should expose a small curated profile list. Returning the complete catalog only from `voice_list` avoids adding unnecessary context to every tool listing.
-
-Initial curated profiles:
-
-| Profile | Kokoro voice | Listening characteristic |
-| --- | --- | --- |
-| `clear-us` | `af_sarah` | Clear, crisp American voice |
-| `clear-uk` | `bf_emma` | Clear, crisp British voice; default |
-| `asmr` | `af_nicole` | Soft, close-microphone presentation |
-| `expressive` | `af_bella` | Expressive American voice |
-| `warm` | `af_heart` | Balanced, warm American voice |
-
-These descriptions combine official model metadata with local listening results. Subjective labels should remain explicitly distinct from upstream quality grades.
+The server records the voice files loaded with the lazy model. Adding or removing files from a running process requires a restart, avoiding a mismatch between the advertised schema and the resident Kokoro voice map.
 
 ## Reliability and security
 
@@ -135,7 +114,7 @@ These settings are host-specific and are intentionally not installed or managed 
 | Neural speech integration | Working with licensed `kokoro-en` 0.1.4 |
 | Default neural voice | `bf_emma` |
 | Neural audio playback | Working through `pw-play` with in-memory PCM |
-| Voice catalog MCP tool | Proposed |
+| Dynamic installed-voice schema | Working |
 | Kokoro embedded Rust benchmark | Completed; currently preferred |
 | Pocket TTS Rust/Candle build | Working with local model file |
 | Pocket TTS listening comparison | Completed for eight stock voices |

@@ -336,7 +336,7 @@ Three fresh processes each performed one first synthesis and 20 resident synthes
 
 One 1.35-second outlier raised the aggregate mean; 59 of 60 runs were at or below 542 ms, and typical medians were approximately 363 ms. Compared with the original unlicensed Kokoros baseline, this implementation was typically faster but retained substantially more memory after repeated inference. The licensed implementation was selected because it met local quality and latency requirements while providing explicit Apache-2.0 licensing.
 
-The production path now keeps one `KokoroTts` instance in the MCP process, loads it lazily, defaults to `bf_emma`, sends in-memory float PCM to PipeWire, and falls back to `spd-say` when initialization, synthesis, or playback fails.
+The production path now keeps one `KokoroTts` instance in the MCP process, loads it and all installed voice files lazily, defaults to `bf_emma`, accepts dynamically discovered voice names, sends in-memory float PCM to PipeWire, and falls back to `spd-say` when initialization, synthesis, or playback fails.
 
 Benchmark validation completed successfully:
 
@@ -406,7 +406,7 @@ A candidate is ready for default use when:
 
 ## Current implementation
 
-Voice Notifier MCP embeds licensed `kokoro-en` 0.1.4 directly in its persistent process. It loads the model lazily on the first spoken notification, uses `bf_emma` by default, supports speed control, and preserves `spd-say` as the fallback.
+Voice Notifier MCP embeds licensed `kokoro-en` 0.1.4 directly in its persistent process. It loads the model and installed voice directory lazily on the first spoken notification, publishes installed safe `.bin` file stems dynamically in the `voice_name` tool schema, prefers `bf_emma` by default, supports speed control, and preserves `spd-say` as the fallback.
 
 The embedded design removes the need for a separate TTS service for the initial single-consumer release. A localhost service may be reconsidered if additional applications need to share one model instance or independent crash/restart isolation becomes more important than deployment simplicity.
 

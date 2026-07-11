@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -32,14 +34,27 @@ def main() -> None:
     if not binary.is_file():
         raise SystemExit(f"binary not found: {binary}")
 
-    process = subprocess.Popen(
-        [str(binary)],
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        bufsize=1,
-    )
+    with tempfile.TemporaryDirectory(prefix="voice-notifier-mcp-smoke-") as directory:
+        voice_directory = Path(directory)
+        (voice_directory / "bf_emma.bin").touch()
+        (voice_directory / "custom-voice.bin").touch()
+        (voice_directory / "ignored.txt").touch()
+        environment = os.environ.copy()
+        environment["VOICE_NOTIFIER_VOICE_PATH"] = directory
+        environment["VOICE_NOTIFIER_VOICE"] = "bf_emma"
+        process = subprocess.Popen(
+            [str(binary)],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            env=environment,
+        )
+        run_checks(process)
+
+
+def run_checks(process: subprocess.Popen[str]) -> None:
     try:
         for request_id, protocol in enumerate(SUPPORTED_PROTOCOLS, start=1):
             response = exchange(
@@ -66,6 +81,9 @@ def main() -> None:
             "idempotentHint": False,
             "openWorldHint": False,
         }, response
+        voice_schema = tool["inputSchema"]["properties"]["voice_name"]
+        assert voice_schema["enum"] == ["bf_emma", "custom-voice"], response
+        assert voice_schema["default"] == "bf_emma", response
     finally:
         if process.stdin:
             process.stdin.close()
@@ -81,7 +99,7 @@ def main() -> None:
 
     if return_code != 0:
         raise SystemExit(f"server exited with status {return_code}")
-    print(f"Package smoke test passed: {binary}")
+    print(f"Package smoke test passed: {process.args[0]}")
 
 
 if __name__ == "__main__":

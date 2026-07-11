@@ -6,6 +6,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-11
+
+### Added
+
+- Added `voice_name` selection to `voice_notify`.
+- Added dynamic JSON Schema enumeration of installed safe `.bin` voice file stems.
+- Added five additional checksum-verified voices to the asset installer: `af_bella`, `af_heart`, `af_nicole`, `af_sarah`, and `am_michael`.
+- Added installed-voice discovery, selection, and validation tests.
+
+### Changed
+
+- Changed the default voice path from `bf_emma.bin` to the complete asset directory while preserving single-file overrides.
+- Changed the asset installer to preserve and skip files that already match their expected checksums.
+
 ## [0.1.2] - 2026-07-11
 
 ### Added
@@ -43,7 +57,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `spd-say` emergency fallback for neural initialization, synthesis, or playback failures.
 - Local asset configuration and checksum-verifying installer.
 
-[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ominiverdi/voice-notifier-mcp/releases/tag/v0.1.0

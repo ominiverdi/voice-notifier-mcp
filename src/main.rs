@@ -25,6 +25,8 @@ struct NotifyArgs {
     bell: bool,
     #[serde(default)]
     voice: bool,
+    #[serde(default)]
+    voice_name: Option<String>,
     #[serde(default = "default_speech_speed")]
     speech_speed: f32,
 }
@@ -89,56 +91,7 @@ async fn handle_request(request: &Value, voice_engine: &mut VoiceEngine) -> Opti
             }
         }),
         "ping" => json!({}),
-        "tools/list" => json!({
-            "tools": [{
-                "name": "voice_notify",
-                "description": "Send a local desktop, terminal, and optional spoken notification after a task completes or needs attention.",
-                "annotations": {
-                    "readOnlyHint": false,
-                    "destructiveHint": false,
-                    "idempotentHint": false,
-                    "openWorldHint": false
-                },
-                "inputSchema": {
-                    "type": "object",
-                    "properties": {
-                        "message": {
-                            "type": "string",
-                            "description": "Short notification and spoken message."
-                        },
-                        "title": {
-                            "type": "string",
-                            "default": "Ferrum",
-                            "description": "Desktop notification title."
-                        },
-                        "desktop": {
-                            "type": "boolean",
-                            "default": true,
-                            "description": "Send a desktop notification with notify-send."
-                        },
-                        "bell": {
-                            "type": "boolean",
-                            "default": false,
-                            "description": "Write an audible bell to the MCP server terminal."
-                        },
-                        "voice": {
-                            "type": "boolean",
-                            "default": false,
-                            "description": "Speak locally with Kokoro using bf_emma by default; fall back to spd-say if neural speech is unavailable."
-                        },
-                        "speech_speed": {
-                            "type": "number",
-                            "minimum": 0.5,
-                            "maximum": 2.0,
-                            "default": 1.0,
-                            "description": "Kokoro speech speed multiplier."
-                        }
-                    },
-                    "required": ["message"],
-                    "additionalProperties": false
-                }
-            }]
-        }),
+        "tools/list" => tools_list_result(voice_engine),
         "tools/call" => return Some(handle_tool_call(request, id, voice_engine).await),
         _ => {
             return Some(error_response(
@@ -150,6 +103,79 @@ async fn handle_request(request: &Value, voice_engine: &mut VoiceEngine) -> Opti
     };
 
     Some(success_response(id, result))
+}
+
+fn tools_list_result(voice_engine: &VoiceEngine) -> Value {
+    let voices = voice_engine.available_voices().unwrap_or_default();
+    let default_voice = voice_engine.resolve_voice(None).ok();
+    let voice_name_schema = if voices.is_empty() {
+        json!({
+            "type": "string",
+            "description": "Installed Kokoro voice file stem. Install voice assets and restart the MCP server to populate the available choices."
+        })
+    } else {
+        let mut schema = json!({
+            "type": "string",
+            "enum": voices,
+            "description": "Installed Kokoro voice file stem."
+        });
+        if let Some(default_voice) = default_voice {
+            schema["default"] = json!(default_voice);
+        }
+        schema
+    };
+
+    json!({
+        "tools": [{
+            "name": "voice_notify",
+            "description": "Send a local desktop, terminal, and optional spoken notification after a task completes or needs attention.",
+            "annotations": {
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": false
+            },
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Short notification and spoken message."
+                    },
+                    "title": {
+                        "type": "string",
+                        "default": "Ferrum",
+                        "description": "Desktop notification title."
+                    },
+                    "desktop": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Send a desktop notification with notify-send."
+                    },
+                    "bell": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Write an audible bell to the MCP server terminal."
+                    },
+                    "voice": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Speak locally with Kokoro; fall back to spd-say if neural speech is unavailable."
+                    },
+                    "voice_name": voice_name_schema,
+                    "speech_speed": {
+                        "type": "number",
+                        "minimum": 0.5,
+                        "maximum": 2.0,
+                        "default": 1.0,
+                        "description": "Kokoro speech speed multiplier."
+                    }
+                },
+                "required": ["message"],
+                "additionalProperties": false
+            }
+        }]
+    })
 }
 
 fn negotiated_protocol(request: &Value) -> &str {
@@ -205,7 +231,16 @@ async fn handle_tool_call(request: &Value, id: Value, voice_engine: &mut VoiceEn
         );
     }
 
-    match send_notification(&args, voice_engine).await {
+    let voice_name = if args.voice {
+        match voice_engine.resolve_voice(args.voice_name.as_deref()) {
+            Ok(name) => Some(name),
+            Err(error) => return tool_result(id, error, true),
+        }
+    } else {
+        None
+    };
+
+    match send_notification(&args, voice_engine, voice_name.as_deref()).await {
         Ok(summary) => tool_result(id, summary, false),
         Err(error) => tool_result(id, error, true),
     }
@@ -214,8 +249,9 @@ async fn handle_tool_call(request: &Value, id: Value, voice_engine: &mut VoiceEn
 async fn send_notification(
     args: &NotifyArgs,
     voice_engine: &mut VoiceEngine,
+    voice_name: Option<&str>,
 ) -> Result<String, String> {
-    let mut delivered = Vec::new();
+    let mut delivered: Vec<String> = Vec::new();
     let mut failures = Vec::new();
 
     if args.desktop {
@@ -225,7 +261,7 @@ async fn send_notification(
             .arg(&args.message)
             .status()
         {
-            Ok(status) if status.success() => delivered.push("desktop"),
+            Ok(status) if status.success() => delivered.push("desktop".to_owned()),
             Ok(status) => failures.push(format!("notify-send exited with {status}")),
             Err(error) => failures.push(format!("notify-send failed: {error}")),
         }
@@ -235,13 +271,16 @@ async fn send_notification(
         if let Err(error) = write_terminal_bell() {
             failures.push(format!("terminal bell failed: {error}"));
         } else {
-            delivered.push("bell");
+            delivered.push("bell".to_owned());
         }
     }
 
-    if args.voice {
-        match voice_engine.speak(&args.message, args.speech_speed).await {
-            Ok(()) => delivered.push("voice (Kokoro)"),
+    if let Some(voice_name) = voice_name {
+        match voice_engine
+            .speak(&args.message, args.speech_speed, voice_name)
+            .await
+        {
+            Ok(()) => delivered.push(format!("voice (Kokoro: {voice_name})")),
             Err(neural_error) => {
                 eprintln!("Neural voice failed; using spd-say fallback: {neural_error}");
                 match Command::new("spd-say")
@@ -249,7 +288,9 @@ async fn send_notification(
                     .arg(&args.message)
                     .status()
                 {
-                    Ok(status) if status.success() => delivered.push("voice (spd-say fallback)"),
+                    Ok(status) if status.success() => {
+                        delivered.push("voice (spd-say fallback)".to_owned())
+                    }
                     Ok(status) => {
                         eprintln!("spd-say fallback exited with {status}");
                         failures.push("voice unavailable".to_owned());
@@ -336,6 +377,10 @@ mod tests {
             Some(&json!("message"))
         );
         assert_eq!(
+            response.pointer("/result/tools/0/inputSchema/properties/voice_name/type"),
+            Some(&json!("string"))
+        );
+        assert_eq!(
             response.pointer("/result/tools/0/annotations"),
             Some(&json!({
                 "readOnlyHint": false,
@@ -403,6 +448,32 @@ mod tests {
                 "params": {
                     "name": "voice_notify",
                     "arguments": {"message": "", "desktop": false}
+                }
+            }),
+            &mut voice_engine,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(response.pointer("/result/isError"), Some(&json!(true)));
+    }
+
+    #[tokio::test]
+    async fn rejects_unavailable_voice_without_running_commands() {
+        let mut voice_engine = VoiceEngine::default();
+        let response = handle_request(
+            &json!({
+                "jsonrpc": "2.0",
+                "id": 5,
+                "method": "tools/call",
+                "params": {
+                    "name": "voice_notify",
+                    "arguments": {
+                        "message": "must not speak",
+                        "desktop": false,
+                        "voice": true,
+                        "voice_name": "not installed!"
+                    }
                 }
             }),
             &mut voice_engine,
