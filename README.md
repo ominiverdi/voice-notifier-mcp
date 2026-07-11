@@ -66,7 +66,7 @@ cargo build --release
 
 Only `message` is required. `speech_speed` accepts 0.5 through 2.0 and defaults to 1.0. Spoken messages are limited to 500 Unicode characters. Process arguments are passed directly without a shell.
 
-The server negotiates MCP protocol versions `2024-11-05`, `2025-06-18`, and `2025-11-25`.
+The server negotiates MCP protocol versions `2024-11-05`, `2025-06-18`, and `2025-11-25`. Interoperability has been verified with Ferrum, Pi 0.80.3 through its MCP bridge extension, and the official MCP Inspector 0.22.0. The tool is annotated as non-destructive, non-idempotent, and local-only.
 
 ## Ferrum configuration
 

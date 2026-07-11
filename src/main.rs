@@ -93,6 +93,12 @@ async fn handle_request(request: &Value, voice_engine: &mut VoiceEngine) -> Opti
             "tools": [{
                 "name": "voice_notify",
                 "description": "Send a local desktop, terminal, and optional spoken notification after a task completes or needs attention.",
+                "annotations": {
+                    "readOnlyHint": false,
+                    "destructiveHint": false,
+                    "idempotentHint": false,
+                    "openWorldHint": false
+                },
                 "inputSchema": {
                     "type": "object",
                     "properties": {
@@ -328,6 +334,15 @@ mod tests {
         assert_eq!(
             response.pointer("/result/tools/0/inputSchema/required/0"),
             Some(&json!("message"))
+        );
+        assert_eq!(
+            response.pointer("/result/tools/0/annotations"),
+            Some(&json!({
+                "readOnlyHint": false,
+                "destructiveHint": false,
+                "idempotentHint": false,
+                "openWorldHint": false
+            }))
         );
     }
 

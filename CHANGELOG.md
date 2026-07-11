@@ -16,6 +16,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Documented the glibc 2.38 runtime requirement discovered during clean-container testing.
 - Declared and added CI coverage for Rust 1.88 as the minimum supported toolchain.
+- Added explicit MCP tool annotations for non-destructive, local notification side effects.
+- Verified interoperability with Ferrum, Pi 0.80.3 through its MCP bridge extension, and the official MCP Inspector 0.22.0.
 
 ## [0.1.0] - 2026-07-11
 
