@@ -72,7 +72,7 @@ jobs:
             bash -c 'dnf install --assumeyes /dist/*.rpm && printf "%s\n" "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}" | voice-notifier-mcp | grep -q voice_notify'
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: voice-notifier-mcp-linux-x86_64
           path: dist/*
@@ -86,7 +86,7 @@ jobs:
       contents: write
     steps:
       - name: Download release packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: voice-notifier-mcp-linux-x86_64
           path: dist
