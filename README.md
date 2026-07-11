@@ -66,6 +66,8 @@ cargo build --release
 
 Only `message` is required. `speech_speed` accepts 0.5 through 2.0 and defaults to 1.0. Spoken messages are limited to 500 Unicode characters. Process arguments are passed directly without a shell.
 
+The server negotiates MCP protocol versions `2024-11-05`, `2025-06-18`, and `2025-11-25`.
+
 ## Ferrum configuration
 
 ```toml

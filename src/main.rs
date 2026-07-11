@@ -12,6 +12,7 @@ const SERVER_NAME: &str = "voice-notifier";
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 const PROTOCOL_VERSION: &str = "2025-11-25";
 const LEGACY_PROTOCOL_VERSION: &str = "2025-06-18";
+const INITIAL_PROTOCOL_VERSION: &str = "2024-11-05";
 
 #[derive(Debug, Deserialize)]
 struct NotifyArgs {
@@ -152,6 +153,7 @@ fn negotiated_protocol(request: &Value) -> &str {
     {
         Some(PROTOCOL_VERSION) => PROTOCOL_VERSION,
         Some(LEGACY_PROTOCOL_VERSION) => LEGACY_PROTOCOL_VERSION,
+        Some(INITIAL_PROTOCOL_VERSION) => INITIAL_PROTOCOL_VERSION,
         _ => PROTOCOL_VERSION,
     }
 }
@@ -333,6 +335,7 @@ mod tests {
     async fn negotiates_supported_and_unknown_protocol_versions() {
         let mut voice_engine = VoiceEngine::default();
         for (requested, expected) in [
+            (INITIAL_PROTOCOL_VERSION, INITIAL_PROTOCOL_VERSION),
             (LEGACY_PROTOCOL_VERSION, LEGACY_PROTOCOL_VERSION),
             (PROTOCOL_VERSION, PROTOCOL_VERSION),
             ("2099-01-01", PROTOCOL_VERSION),

@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-07-11
+
+### Fixed
+
+- Added protocol negotiation compatibility with MCP `2024-11-05` clients.
+
 ### Changed
 
 - Documented the glibc 2.38 runtime requirement discovered during clean-container testing.
@@ -23,5 +29,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `spd-say` emergency fallback for neural initialization, synthesis, or playback failures.
 - Local asset configuration and checksum-verifying installer.
 
-[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ominiverdi/voice-notifier-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/ominiverdi/voice-notifier-mcp/releases/tag/v0.1.0
